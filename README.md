@@ -1,0 +1,67 @@
+# Gewu Agent
+
+Gewu Agent 是一个面向个人学习、知识库问答和智能体框架实践的自研智能体平台。
+
+项目目标不是简单套壳调用大模型，而是通过 Spring AI、RAG、Tool Calling、MCP 和自研 ReAct 执行循环，搭建一套可扩展、可解释、可沉淀的个人 AI 应用平台。
+
+## 核心智能体
+
+| 智能体 | 一句话定位 | 首期知识来源 | 核心能力 |
+| --- | --- | --- | --- |
+| 面试助手 | 面向 Java/后端/算法/项目面试的个人问答教练 | 面试鸭 PDF 面试题 | 知识库问答、追问、答案结构化、薄弱点复盘 |
+| 考研学习助手 | 面向 408 复习的课程资料学习助手 | 408 PDF 课件，后续支持 PPT/PPTX | 概念解释、章节总结、题目讲解、知识点关联 |
+| LeManus | 自研 ReAct 智能体，用于理解和实践 Agent 原理 | 工具、MCP 服务、用户任务上下文 | 计划、执行、观察、反思、工具调用 |
+| 扩展智能体 | 面向未来新增场景的配置化智能体 | 用户自定义知识库和工具集 | 角色配置、知识库绑定、工具授权 |
+
+## 技术方向
+
+- Backend: Spring Boot 4.x, Spring AI stable, JDK 21
+- Frontend: Vue, TypeScript, Vite
+- AI: DeepSeek v4 flash/pro 云模型、本地 Ollama 模型
+- RAG: 本地文档知识库、云知识库、向量数据库
+- Tools: Spring AI Tool Calling, MCP Client/Server
+- Documents: PDF 首期支持，PPT/PPTX 作为增强能力纳入规划
+
+## 本地启动
+
+后端在项目根目录，前端暂未创建。
+
+在 Git Bash 中启动：
+
+```bash
+./start.sh --build
+```
+
+停止：
+
+```bash
+./stop.sh
+```
+
+常用参数：
+
+```bash
+./start.sh --port 8081
+./start.sh --build --port 8081
+```
+
+脚本会自动查找 JDK 21，使用项目内 `.m2/repository` 作为 Maven 本地仓库，并把日志写入 `.run/logs/`。
+
+## 文档入口
+
+- [产品需求文档](docs/01-product-requirements.md)
+- [技术架构文档](docs/02-technical-architecture.md)
+- [路线图与里程碑](docs/03-roadmap.md)
+- [项目亮点与简历表达](docs/04-resume-value.md)
+- [前端设计规范](docs/05-frontend-design-guidelines.md)
+
+## 关键判断
+
+直接把 PDF 投喂给在线大模型可以解决一次性问答，但难以形成稳定、可复用、可评估的学习系统。
+
+Gewu Agent 的价值在于：
+
+- 知识可沉淀：文档、切片、向量、问答历史、错题和薄弱点都能长期保存。
+- 检索可控制：可以调整切分策略、召回数量、重排策略、引用来源和权限边界。
+- 智能体可扩展：不同智能体可以绑定不同知识库、提示词、工具和模型。
+- 工程能力可展示：项目覆盖 Spring AI、RAG、Tool Calling、MCP、文档解析、向量数据库和前后端工程化。
