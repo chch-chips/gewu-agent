@@ -1,0 +1,8 @@
+spring:
+  ai:
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY:replace-with-your-key}
+      base-url: https://api.deepseek.com
+      chat:
+        model: deepseek-v4-flash
+        temperature: 0.7

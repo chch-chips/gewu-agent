@@ -14,7 +14,7 @@ Gewu Agent 是一个个人智能体平台，核心目标是学习和实践 Sprin
 
 ## 文档约束
 
-- Spring AI 只引用稳定版文档：https://docs.spring.io/spring-ai/reference/index.html
+- Spring AI 只引用 2.0 GA 文档：https://docs.spring.io/spring-ai/reference/index.html
 - 不引用 Spring AI 2.0-SNAPSHOT 文档。
 - 涉及 Spring AI API、依赖、MCP、Tool Calling、RAG、VectorStore、ChatClient 时，必须先使用 Context7 查询当前稳定文档。
 - DeepSeek 模型命名使用官方新口径：`deepseek-v4-flash` 和 `deepseek-v4-pro`。
@@ -22,12 +22,12 @@ Gewu Agent 是一个个人智能体平台，核心目标是学习和实践 Sprin
 
 ## 技术栈约束
 
-- Backend: Spring Boot 4.x, Spring AI stable, JDK 21
+- Backend: Spring Boot 4.x, Spring AI 2.0 GA, JDK 21
 - Frontend: Vue, TypeScript, Vite
 - Vector Store 首期优先 PostgreSQL + pgvector
 - PDF 首期优先 Spring AI PDF Document Reader
 - PPT/PPTX 首期使用 Apache Tika 抽取文本；需要 slide、shape、notes 细粒度解析时再引入 Apache POI
-- 云模型优先 DeepSeek v4 flash/pro，本地模型使用 Ollama
+- 阶段 0 只接 DeepSeek v4 flash/pro；先不要接本地 Ollama
 
 ## 前端设计约束
 
@@ -45,6 +45,13 @@ Gewu Agent 是一个个人智能体平台，核心目标是学习和实践 Sprin
 - Agent 工具调用必须有白名单、超时、最大步数和执行日志。
 - 模型、向量库、文档解析器都应通过接口隔离，避免写死实现。
 - 简历亮点优先来自真实工程能力：RAG 评测、引用溯源、工具轨迹、模型路由、MCP 接入、自研 ReAct。
+
+## 启动脚本约束
+
+- 日常后端开发使用 `start-dev.ps1` 前台启动，保持窗口常驻，停止时由用户按 `Ctrl+C`。
+- `stop-dev.ps1` 只用于清理残留后端进程或端口占用。
+- Git Bash 脚本仅保留 `start.sh`、`stop.sh`、`restart.sh`。
+- 不新增或推荐 cmd 版本脚本；不新增 `restart-dev.ps1` 作为常规开发入口。
 
 ## 文档维护
 

@@ -68,7 +68,7 @@ Gewu Agent 的前端设计应避免千篇一律的管理后台模板。它是学
 - 知识库页面要强调文件状态、切片数量、索引状态、失败原因和重建入口。
 - RAG 调试页面要能快速看到 query、TopK、score、chunk、来源和最终上下文。
 - LeManus 调试台要突出 Reason、Act、Observe、Reflect 的执行轨迹。
-- 模型配置页面要清楚区分 DeepSeek v4 flash、DeepSeek v4 pro 和 Ollama 本地模型。
+- 阶段 0 模型配置页面要清楚区分 DeepSeek v4 flash 和 DeepSeek v4 pro；Ollama 后续再出现。
 
 ## 4. 色彩方向
 
@@ -113,4 +113,3 @@ Gewu Agent 的前端设计应避免千篇一律的管理后台模板。它是学
 - 是否能清楚展示状态、来源、轨迹或下一步动作？
 - 是否所有图标都有统一来源和语义？
 - 是否移动端和桌面端都没有文字溢出或重叠？
-

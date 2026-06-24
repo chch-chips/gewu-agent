@@ -9,7 +9,7 @@
 - 初始化 Spring Boot 后端项目。
 - 初始化 Vue + TypeScript 前端项目。
 - 建立基础目录结构和代码规范。
-- 接入一个云模型和一个本地模型。
+- 接入 DeepSeek 云模型。
 - 实现普通聊天接口和流式响应。
 
 验收：
@@ -128,7 +128,7 @@
 
 | 风险 | 表现 | 处理 |
 | --- | --- | --- |
-| Spring Boot 4 + Spring AI 稳定版兼容问题 | 依赖冲突、API 变动 | 使用 BOM，以稳定版 Reference 为准，避免 Snapshot API |
+| Spring Boot 4 + Spring AI 2.0 GA 兼容问题 | 依赖冲突、API 变动 | 使用 BOM，以 2.0 GA Reference 为准，避免 Snapshot API |
 | RAG 回答效果不稳定 | 召回片段不准、答案泛化 | 做检索调试和评测集 |
 | PPT 解析质量一般 | 图表、公式、图片丢失 | 首期只承诺文本和备注，后续 OCR/多模态 |
 | Agent 容易失控 | 循环调用、工具误用 | 最大步数、白名单、超时、执行日志 |

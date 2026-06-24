@@ -52,6 +52,39 @@ done
 
 mkdir -p "$RUN_DIR" "$LOG_DIR" "$LOCAL_REPO"
 
+load_env_file() {
+  local env_file="$ROOT/.env"
+  if [[ ! -f "$env_file" ]]; then
+    return 0
+  fi
+
+  set -a
+  # shellcheck disable=SC1090
+  source "$env_file"
+  set +a
+}
+
+config_status() {
+  local value="${1:-}"
+  if [[ -z "$value" ]]; then
+    printf 'not configured'
+    return 0
+  fi
+  printf 'configured'
+}
+
+jar_needs_rebuild() {
+  if [[ ! -f "$JAR" ]]; then
+    return 0
+  fi
+
+  if find "$ROOT/pom.xml" "$ROOT/src/main" "$ROOT/src/test" -type f -newer "$JAR" 2>/dev/null | grep -q .; then
+    return 0
+  fi
+
+  return 1
+}
+
 is_running() {
   local pid="$1"
   [[ -n "$pid" ]] && tasklist.exe //FI "PID eq $pid" //NH 2>/dev/null | grep -q "[[:space:]]$pid[[:space:]]"
@@ -67,6 +100,8 @@ if [[ -f "$PID_FILE" ]]; then
   fi
   rm -f "$PID_FILE"
 fi
+
+load_env_file
 
 java_major_version() {
   local java_exe="$1"
@@ -121,7 +156,7 @@ JAVA_EXE="$JDK_HOME/bin/java.exe"
 export JAVA_HOME="$JDK_HOME"
 export PATH="$JAVA_HOME/bin:$PATH"
 
-if [[ "$BUILD" == "1" || ! -f "$JAR" ]]; then
+if [[ "$BUILD" == "1" ]] || jar_needs_rebuild; then
   echo "Building backend with JDK 21: $JAVA_HOME"
   mvn "-Dmaven.repo.local=$LOCAL_REPO" -q -DskipTests clean package
 fi
@@ -143,10 +178,18 @@ GEWU_ERR_LOG="$(cygpath -w "$ERR_LOG")"
 GEWU_PORT="$PORT"
 START_CMD="$RUN_DIR/start-backend.cmd"
 GEWU_START_CMD="$(cygpath -w "$START_CMD")"
+CMD_DEEPSEEK_API_KEY="${DEEPSEEK_API_KEY:-}"
+CMD_DEEPSEEK_BASE_URL="${DEEPSEEK_BASE_URL:-https://api.deepseek.com}"
+CMD_DEEPSEEK_MODEL="${DEEPSEEK_MODEL:-deepseek-v4-flash}"
+CMD_DEEPSEEK_TEMPERATURE="${DEEPSEEK_TEMPERATURE:-0.7}"
 
 cat > "$START_CMD" <<EOF
 @echo off
 cd /d "$GEWU_ROOT"
+set "DEEPSEEK_API_KEY=$CMD_DEEPSEEK_API_KEY"
+set "DEEPSEEK_BASE_URL=$CMD_DEEPSEEK_BASE_URL"
+set "DEEPSEEK_MODEL=$CMD_DEEPSEEK_MODEL"
+set "DEEPSEEK_TEMPERATURE=$CMD_DEEPSEEK_TEMPERATURE"
 "$GEWU_JAVA_EXE" -jar "$GEWU_JAR" --server.port=$GEWU_PORT > "$GEWU_OUT_LOG" 2> "$GEWU_ERR_LOG"
 EOF
 
@@ -179,4 +222,9 @@ fi
 echo "Gewu Agent backend started."
 echo "PID: $PID"
 echo "URL: http://localhost:$PORT"
+echo "DeepSeek API key: $(config_status "${DEEPSEEK_API_KEY:-}")"
+echo "Model: ${DEEPSEEK_MODEL:-deepseek-v4-flash}"
 echo "Logs: $OUT_LOG"
+echo
+echo "Startup summary:"
+grep -E "Starting GewuAgentApplication|Tomcat started|Started GewuAgentApplication" "$OUT_LOG" | tail -n 6

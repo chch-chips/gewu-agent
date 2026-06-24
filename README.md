@@ -15,18 +15,37 @@ Gewu Agent 是一个面向个人学习、知识库问答和智能体框架实践
 
 ## 技术方向
 
-- Backend: Spring Boot 4.x, Spring AI stable, JDK 21
+- Backend: Spring Boot 4.x, Spring AI 2.0 GA, JDK 21
 - Frontend: Vue, TypeScript, Vite
-- AI: DeepSeek v4 flash/pro 云模型、本地 Ollama 模型
+- AI: DeepSeek v4 flash/pro 云模型
 - RAG: 本地文档知识库、云知识库、向量数据库
 - Tools: Spring AI Tool Calling, MCP Client/Server
 - Documents: PDF 首期支持，PPT/PPTX 作为增强能力纳入规划
 
 ## 本地启动
 
-后端在项目根目录，前端暂未创建。
+后端在项目根目录，前端在 `frontend/`。
 
-在 Git Bash 中启动：
+后端需要配置 DeepSeek API Key。日常使用 PowerShell 启动时，先复制开发配置模板：
+
+```powershell
+Copy-Item .\src\main\resources\application-example.yml .\src\main\resources\application-dev.yml
+```
+
+然后编辑已被 Git 忽略的 `application-dev.yml`：
+
+```yaml
+spring:
+  ai:
+    deepseek:
+      api-key: 你的_key
+```
+
+Git Bash 脚本保留作为兼容方案：
+
+```bash
+printf 'DEEPSEEK_API_KEY=你的_key\n' > .env
+```
 
 ```bash
 ./start.sh --build
@@ -38,14 +57,43 @@ Gewu Agent 是一个面向个人学习、知识库问答和智能体框架实践
 ./stop.sh
 ```
 
+重启：
+
+```bash
+./restart.sh
+```
+
 常用参数：
 
 ```bash
 ./start.sh --port 8081
 ./start.sh --build --port 8081
+./restart.sh --build
 ```
 
-脚本会自动查找 JDK 21，使用项目内 `.m2/repository` 作为 Maven 本地仓库，并把日志写入 `.run/logs/`。
+脚本会自动加载 `.env`、查找 JDK 21、在后端资源或源码变化后自动重新构建，并把完整日志写入 `.run/logs/`。命令行会直接打印 PID、URL、DeepSeek Key 配置状态和 Spring Boot 启动摘要。
+
+日常开发推荐使用 PowerShell 前台模式，直接运行源码和配置：
+
+```powershell
+.\start-dev.ps1
+```
+
+`start-dev.ps1` 使用 `mvn spring-boot:run`，会在当前窗口输出 Spring Boot 日志；需要停止时直接按 `Ctrl+C`。如果曾经有后台残留进程或端口占用，再使用：
+
+```powershell
+.\stop-dev.ps1
+```
+
+当前推荐保留的启动脚本只有：`start-dev.ps1`、`stop-dev.ps1`、`start.sh`、`stop.sh`、`restart.sh`。
+
+前端启动：
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ## 文档入口
 

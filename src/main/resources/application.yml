@@ -1,9 +1,28 @@
 spring:
   application:
     name: gewu-agent
+  profiles:
+    active: dev
+  ai:
+    model:
+      chat: none
 
 server:
   port: 8080
+
+springdoc:
+  override-with-generic-response: false
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: default
+      paths-to-match: /**
+      packages-to-scan: com.gewu.agent.controller
+
 # knife4j config
 knife4j:
   enable: true

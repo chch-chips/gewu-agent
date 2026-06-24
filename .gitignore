@@ -1,7 +1,14 @@
 target/
 *.log
+.env
+application-dev.yml
 
 .m2/
 .run/
+.tmp-edge-profile/
 .idea/
 *.iml
+
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
