@@ -41,6 +41,11 @@ Gewu Agent 是一个个人智能体平台，核心目标是学习和实践 Sprin
 ## 开发原则
 
 - 先完成端到端闭环，再优化效果。
+- 框架开发遵循“官方稳定文档、主流高层 API、框架自动配置优先”：先按官方推荐路径实现，再考虑自定义适配。
+- Spring AI 统一优先使用 Starter 自动配置、`ChatClient`、`ChatModel`、Advisor、Tool Calling、VectorStore 等高层抽象；不在业务层手工创建 `DeepSeekApi`、`DeepSeekChatModel` 或重复定义框架已有的配置属性。
+- Spring AI 配置必须使用 2.0 GA 官方属性层级，例如 `spring.ai.model.chat=deepseek` 和 `spring.ai.deepseek.chat.options.*`；不得通过关闭自动配置后手工补 Bean 来掩盖配置问题。
+- 遇到框架调用异常时，先检查依赖版本、配置属性、自动配置条件、Bean 注入和官方示例，再判断框架缺陷。
+- 只有在官方高层 API 无法满足需求且已有可复现证据时，才允许封装低层供应商 API；必须隔离在适配层、补充回归测试并记录恢复高层 API 的条件。
 - RAG 相关功能必须保留来源引用和检索调试能力。
 - Agent 工具调用必须有白名单、超时、最大步数和执行日志。
 - 模型、向量库、文档解析器都应通过接口隔离，避免写死实现。

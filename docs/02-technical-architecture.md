@@ -31,6 +31,57 @@
 - ETL：文档入库采用 DocumentReader、DocumentTransformer、DocumentWriter 思路；PDF 使用 `spring-ai-pdf-document-reader`，切分后写入 VectorStore。
 - VectorStore：通过 Spring AI VectorStore 抽象访问向量库，业务层不直接依赖具体向量数据库 SDK。
 
+#### 官方高层 API 优先原则
+
+Spring AI 相关实现以“Starter 自动配置 → Spring AI 高层抽象 → 业务服务”为默认调用链：
+
+```text
+spring-ai-starter-model-deepseek
+  → DeepSeekChatModel 自动配置
+  → ChatClient.Builder 自动配置
+  → ChatClient
+  → ChatService
+```
+
+标准聊天写法：
+
+```java
+var content = chatClient.prompt()
+        .user(request.message())
+        .options(options)
+        .call()
+        .content();
+
+Flux<String> stream = chatClient.prompt()
+        .user(request.message())
+        .options(options)
+        .stream()
+        .content();
+```
+
+配置采用 Spring AI 2.0 GA 官方属性，不重复创建同前缀的自定义 Properties：
+
+```yaml
+spring:
+  ai:
+    model:
+      chat: deepseek
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY}
+      chat:
+        options:
+          model: deepseek-v4-flash
+          temperature: 0.7
+```
+
+开发约束：
+
+- 优先注入自动配置的 `ChatClient.Builder`、`ChatModel` 和框架 Properties Bean。
+- 不在业务服务中手工创建 `DeepSeekApi`、`DeepSeekChatModel`、WebClient 或重复配置类。
+- 调用异常先检查 BOM 版本、属性层级、自动配置条件报告、Bean 是否存在以及官方示例。
+- 低层供应商 API 只用于高层抽象确实无法覆盖的能力，并应封装在 provider adapter 中，不能扩散到业务层。
+- 低层例外必须有稳定复现、自动化测试和明确注释；框架恢复可用后应回归高层 API。
+
 ### 前端
 
 - Framework: Vue

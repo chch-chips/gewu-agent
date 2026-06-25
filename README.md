@@ -22,6 +22,17 @@ Gewu Agent 是一个面向个人学习、知识库问答和智能体框架实践
 - Tools: Spring AI Tool Calling, MCP Client/Server
 - Documents: PDF 首期支持，PPT/PPTX 作为增强能力纳入规划
 
+## 开发规范
+
+Spring AI 开发统一以 [Spring AI 2.0.0 GA Reference](https://docs.spring.io/spring-ai/reference/index.html) 为准：
+
+- 优先使用 Starter 自动配置和 `ChatClient`、`ChatModel`、Advisor、Tool Calling、VectorStore 等高层 API。
+- 同步聊天使用 `chatClient.prompt().call().content()`，流式聊天使用 `chatClient.prompt().stream().content()`。
+- 优先排查依赖、官方配置属性、自动配置条件和 Bean 注入，不通过手工创建供应商客户端掩盖配置错误。
+- 只有高层 API 明确无法满足需求时，才在独立适配层使用低层 API，并补充复现证据与回归测试。
+
+详细约束见 [技术架构文档](docs/02-technical-architecture.md)。
+
 ## 本地启动
 
 后端在项目根目录，前端在 `frontend/`。
@@ -37,8 +48,14 @@ Copy-Item .\src\main\resources\application-example.yml .\src\main\resources\appl
 ```yaml
 spring:
   ai:
+    model:
+      chat: deepseek
     deepseek:
       api-key: 你的_key
+      chat:
+        options:
+          model: deepseek-v4-flash
+          temperature: 0.7
 ```
 
 Git Bash 脚本保留作为兼容方案：

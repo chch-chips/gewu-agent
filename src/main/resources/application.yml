@@ -5,7 +5,7 @@ spring:
     active: dev
   ai:
     model:
-      chat: none
+      chat: deepseek
 
 server:
   port: 8080

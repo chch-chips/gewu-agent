@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import MarkdownIt from 'markdown-it'
 import { computed, onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
+import { renderMarkdown } from './markdown'
+import { consumeSseBuffer } from './sse'
 
 type ChatConfig = {
   configured: boolean
@@ -13,7 +14,7 @@ type Message = {
   id: number
   role: 'user' | 'assistant'
   content: string
-  state?: 'normal' | 'error'
+  state?: 'normal' | 'streaming' | 'error'
 }
 
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? ''
@@ -29,20 +30,6 @@ const input = ref('')
 const selectedModel = ref('deepseek-v4-flash')
 const loading = ref(false)
 const error = ref('')
-
-const markdown = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: true,
-  breaks: true
-})
-
-markdown.renderer.rules.link_open = (tokens, idx, options, env, self) => {
-  const token = tokens[idx]
-  token.attrSet('target', '_blank')
-  token.attrSet('rel', 'noopener noreferrer')
-  return self.renderToken(tokens, idx, options)
-}
 
 const modelOptions = [
   { value: 'deepseek-v4-flash', label: 'v4 flash' },
@@ -78,21 +65,24 @@ async function sendMessage() {
   const assistantMessage: Message = {
     id: Date.now() + 1,
     role: 'assistant',
-    content: ''
+    content: '',
+    state: 'streaming'
   }
 
   messages.value.push(userMessage, assistantMessage)
+  const reactiveAssistantMessage = messages.value[messages.value.length - 1]
   input.value = ''
   loading.value = true
   error.value = ''
 
   try {
-    await sendStream(content, assistantMessage)
+    await sendStream(content, reactiveAssistantMessage)
+    reactiveAssistantMessage.state = 'normal'
   } catch (err) {
     const message = err instanceof Error ? err.message : '流式连接中断，请稍后重试。'
-    assistantMessage.state = 'error'
-    assistantMessage.content = assistantMessage.content
-      ? `${assistantMessage.content}\n\n> ${message}`
+    reactiveAssistantMessage.state = 'error'
+    reactiveAssistantMessage.content = reactiveAssistantMessage.content
+      ? `${reactiveAssistantMessage.content}\n\n> ${message}`
       : `流式接口暂时不可用。\n\n${message}\n\n请检查后端日志或稍后重试。`
     error.value = message
   } finally {
@@ -124,44 +114,15 @@ async function sendStream(content: string, assistantMessage: Message) {
     if (done) break
 
     buffer += decoder.decode(value, { stream: true })
-    buffer = consumeSseBuffer(buffer, assistantMessage)
+    buffer = consumeSseBuffer(buffer, (text) => {
+      assistantMessage.content += text
+    })
   }
 
   buffer += decoder.decode()
-  consumeSseBuffer(`${buffer}\n\n`, assistantMessage)
-}
-
-function consumeSseBuffer(buffer: string, assistantMessage: Message) {
-  const events = buffer.split(/\r?\n\r?\n/)
-  const rest = events.pop() ?? ''
-
-  for (const event of events) {
-    const text = parseSseEvent(event)
-    if (text !== '' && text.trim() !== '[DONE]') {
-      assistantMessage.content += text
-    }
-  }
-
-  return rest
-}
-
-function parseSseEvent(event: string) {
-  return event
-    .split(/\r?\n/)
-    .filter((line) => line.startsWith('data:'))
-    .map((line) => line.slice('data:'.length))
-    .join('\n')
-}
-
-function renderMarkdown(content: string) {
-  return markdown.render(normalizeMarkdown(content || '正在思考...'))
-}
-
-function normalizeMarkdown(content: string) {
-  return content
-    .replace(/^(#{1,6})(?=\S)/gm, '$1 ')
-    .replace(/^(\s*[-*+])(?=\S)/gm, '$1 ')
-    .replace(/^(\s*\d+\.)(?=[^\d\s])/gm, '$1 ')
+  consumeSseBuffer(`${buffer}\n\n`, (text) => {
+    assistantMessage.content += text
+  })
 }
 
 onMounted(loadConfig)
@@ -219,7 +180,7 @@ onMounted(loadConfig)
           <div
             v-if="message.role === 'assistant'"
             class="message-body markdown-body"
-            v-html="renderMarkdown(message.content)"
+            v-html="renderMarkdown(message.content, message.state === 'streaming')"
           ></div>
           <p v-else class="message-body">{{ message.content }}</p>
         </article>

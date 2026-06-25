@@ -13,5 +13,6 @@
     "jsx": "preserve",
     "strict": true
   },
-  "include": ["src/**/*.ts", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.vue"],
+  "exclude": ["src/**/*.test.ts"]
 }

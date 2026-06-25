@@ -1,69 +1,65 @@
 package com.gewu.agent.service;
 
-import com.gewu.agent.config.DeepSeekProperties;
 import com.gewu.agent.dto.ChatConfigResponse;
 import com.gewu.agent.dto.ChatRequest;
 import com.gewu.agent.dto.ChatResponse;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.deepseek.DeepSeekChatModel;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.deepseek.DeepSeekChatOptions;
-import org.springframework.ai.deepseek.api.DeepSeekApi;
+import org.springframework.ai.model.deepseek.autoconfigure.DeepSeekChatProperties;
+import org.springframework.ai.model.deepseek.autoconfigure.DeepSeekConnectionProperties;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
 @Service
 public class ChatService {
 
-    private final DeepSeekProperties properties;
+    private final ChatClient chatClient;
 
-    public ChatService(DeepSeekProperties properties) {
-        this.properties = properties;
+    private final DeepSeekConnectionProperties connectionProperties;
+
+    private final DeepSeekChatProperties chatProperties;
+
+    public ChatService(
+            ChatClient.Builder chatClientBuilder,
+            DeepSeekConnectionProperties connectionProperties,
+            DeepSeekChatProperties chatProperties
+    ) {
+        this.chatClient = chatClientBuilder.build();
+        this.connectionProperties = connectionProperties;
+        this.chatProperties = chatProperties;
     }
 
     public ChatConfigResponse config() {
-        return new ChatConfigResponse(properties.hasApiKey(), defaultModel(), properties.getBaseUrl());
+        return new ChatConfigResponse(
+                StringUtils.hasText(apiKey()),
+                defaultModel(),
+                baseUrl()
+        );
     }
 
     public ChatResponse chat(ChatRequest request) {
         var model = modelFor(request);
-        var response = chatModel(request).call(new Prompt(new UserMessage(request.message())));
-        return new ChatResponse(response.getResult().getOutput().getText(), model);
+        var content = chatClient.prompt()
+                .user(request.message())
+                .options(optionsFor(request))
+                .call()
+                .content();
+        return new ChatResponse(content, model);
     }
 
     public Flux<String> stream(ChatRequest request) {
-        var prompt = new Prompt(new UserMessage(request.message()));
-        return chatModel(request).stream(prompt)
-                .<String>handle((response, sink) -> {
-                    if (response.getResult() == null || response.getResult().getOutput() == null) {
-                        return;
-                    }
-                    var text = response.getResult().getOutput().getText();
-                    if (text != null && !text.isEmpty()) {
-                        sink.next(text);
-                    }
-                });
+        return chatClient.prompt()
+                .user(request.message())
+                .options(optionsFor(request))
+                .stream()
+                .content();
     }
 
-    private DeepSeekChatModel chatModel(ChatRequest request) {
-        if (!properties.hasApiKey()) {
-            throw new IllegalStateException("DeepSeek API key is not configured. Set DEEPSEEK_API_KEY before starting the backend.");
-        }
-
-        var api = DeepSeekApi.builder()
-                .apiKey(properties.getApiKey())
-                .baseUrl(properties.getBaseUrl())
-                .build();
-
-        var options = DeepSeekChatOptions.builder()
+    private DeepSeekChatOptions.Builder optionsFor(ChatRequest request) {
+        return DeepSeekChatOptions.builder()
                 .model(modelFor(request))
-                .temperature(temperatureFor(request))
-                .build();
-
-        return DeepSeekChatModel.builder()
-                .deepSeekApi(api)
-                .options(options)
-                .build();
+                .temperature(temperatureFor(request));
     }
 
     private String modelFor(ChatRequest request) {
@@ -74,7 +70,7 @@ public class ChatService {
     }
 
     private String defaultModel() {
-        var model = properties.getChat().getModel();
+        var model = chatProperties.toOptions().getModel();
         return model == null || model.isBlank() ? "deepseek-v4-flash" : model;
     }
 
@@ -82,6 +78,18 @@ public class ChatService {
         if (request.temperature() != null) {
             return request.temperature();
         }
-        return properties.getChat().getTemperature();
+        return chatProperties.toOptions().getTemperature();
+    }
+
+    private String apiKey() {
+        return StringUtils.hasText(chatProperties.getApiKey())
+                ? chatProperties.getApiKey()
+                : connectionProperties.getApiKey();
+    }
+
+    private String baseUrl() {
+        return StringUtils.hasText(chatProperties.getBaseUrl())
+                ? chatProperties.getBaseUrl()
+                : connectionProperties.getBaseUrl();
     }
 }
